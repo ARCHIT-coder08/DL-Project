@@ -1,11 +1,29 @@
 import os
 import argparse
 import tensorflow as tf
+from tensorflow.keras import mixed_precision
 from tensorflow.keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping, ReduceLROnPlateau
+
+# ============================================================================
+# GPU & MIXED PRECISION OPTIMIZATION
+# ============================================================================
+# Enable FP16 mixed precision to cut VRAM usage by ~50%
+mixed_precision.set_global_policy('mixed_float16')
+
+# Enable dynamic memory allocation to prevent instant VRAM exhaustion
+gpus = tf.config.list_physical_devices('GPU')
+if gpus:
+    try:
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+    except RuntimeError as e:
+        print(f"GPU memory growth setting error: {e}")
+# ============================================================================
 
 # Import custom loss functions and data handlers
 from src.metrics.losses import dice_loss, dice_coef
 from src.generator.generator import get_dataset_generators
+
 
 def build_model_factory(model_name, input_shape=(256, 256, 3), num_classes=4):
     """Dynamically routes the model build based on the user's CLI choice."""
@@ -25,6 +43,7 @@ def build_model_factory(model_name, input_shape=(256, 256, 3), num_classes=4):
     print(f"\n--> Successfully loaded {model_name} architecture.")
     return build_model(input_shape=input_shape, num_classes=num_classes)
 
+
 def main():
     # 1. Setup Argparse for Colab-friendly CLI choices
     parser = argparse.ArgumentParser(description="Lunar Terrain Segmentation Training Pipeline")
@@ -32,11 +51,11 @@ def main():
         "--model",
         type=str,
         required=True,
-        choices=["unet", "unet_plus_plus", "attention_unet"],
+        choices=["unet", "unet_plus_plus", "attention_unet", "vnet", "segnet"],
         help="Select the model architecture to train"
     )
     parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
-    parser.add_argument("--batch_size", type=int, default=16, help="Batch size for training")
+    parser.add_argument("--batch_size", type=int, default=8, help="Batch size for training")
 
     args = parser.parse_args()
 
