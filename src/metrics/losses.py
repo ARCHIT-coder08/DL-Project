@@ -5,12 +5,13 @@ def dice_coef(y_true, y_pred, smooth=1e-6):
     Calculates the Dice Coefficient.
     The smooth term prevents division by zero if both sets are empty.
     """
-    # Cast ground truth to float32 to match predictions
+    # Cast both inputs to float32 for mixed precision compatibility
     y_true_f = tf.cast(y_true, tf.float32)
+    y_pred_f = tf.cast(y_pred, tf.float32)
     
     # Flatten tensors using pure TensorFlow (reshaping to 1D)
     y_true_f = tf.reshape(y_true_f, [-1])
-    y_pred_f = tf.reshape(y_pred, [-1])
+    y_pred_f = tf.reshape(y_pred_f, [-1])
     
     # Calculate the intersection (X ∩ Y)
     intersection = tf.reduce_sum(y_true_f * y_pred_f)
